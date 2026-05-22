@@ -55,7 +55,7 @@ export default function QuestsScreen() {
           <FadeInView style={styles.empty}>
             <Text style={styles.emptyTitle}>Nothing for today</Text>
             <Text style={styles.emptyText}>
-              Add a habit to start tracking.
+              Add a quest from the Habits tab to start.
             </Text>
           </FadeInView>
         ) : (
@@ -98,7 +98,7 @@ export default function QuestsScreen() {
                     <View style={styles.doneInfo}>
                       <Text style={styles.doneName}>{habit.name}</Text>
                       <Text style={styles.doneCategory}>
-                        {STAT_LABELS[habit.category]}
+                        {STAT_LABELS[habit.category]} · +{habit.xpReward} XP
                       </Text>
                     </View>
                   </Animated.View>

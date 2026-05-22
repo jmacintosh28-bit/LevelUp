@@ -43,7 +43,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="habits"
-        options={{ title: 'Habits', tabBarLabel: 'Habits' }}
+        options={{ title: 'Quests', tabBarLabel: 'Quests' }}
       />
     </Tabs>
   );

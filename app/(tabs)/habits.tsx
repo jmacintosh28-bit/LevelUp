@@ -9,6 +9,8 @@ import { router } from 'expo-router';
 import { useGameStore } from '@/src/store/gameStore';
 import { Screen } from '@/src/components/Screen';
 import { FadeInView } from '@/src/components/FadeInView';
+import { PresetQuestPicker } from '@/src/components/PresetQuestPicker';
+import type { Habit } from '@/src/types';
 import { STAT_LABELS, STAT_COLORS } from '@/src/types';
 import { colors, spacing, radius, typography, animation } from '@/src/constants/theme';
 
@@ -20,7 +22,7 @@ function HabitRow({
   onPress,
   onDelete,
 }: {
-  item: { id: string; name: string; category: keyof typeof STAT_COLORS; streak: number };
+  item: Habit;
   index: number;
   onPress: () => void;
   onDelete: () => void;
@@ -47,9 +49,14 @@ function HabitRow({
         />
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
+          {item.goal ? (
+            <Text style={styles.goal} numberOfLines={1}>
+              {item.goal}
+            </Text>
+          ) : null}
           <Text style={styles.meta}>
-            {STAT_LABELS[item.category]}
-            {item.streak > 0 ? ` · ${item.streak} day streak` : ''}
+            {STAT_LABELS[item.category]} · {item.xpReward} XP
+            {item.streak > 0 ? ` · ${item.streak}d streak` : ''}
           </Text>
         </View>
         <Pressable onPress={onDelete} hitSlop={12} style={styles.deleteBtn}>
@@ -67,23 +74,29 @@ export default function HabitsScreen() {
   return (
     <View style={styles.container}>
       <Screen contentStyle={styles.list}>
+        <PresetQuestPicker />
         {habits.length === 0 ? (
           <FadeInView style={styles.empty}>
-            <Text style={styles.emptyTitle}>No habits yet</Text>
-            <Text style={styles.emptyText}>Add one to build your routine.</Text>
+            <Text style={styles.emptyTitle}>No quests yet</Text>
+            <Text style={styles.emptyText}>
+              Pick a suggested quest above or add your own.
+            </Text>
           </FadeInView>
         ) : (
-          habits.map((item, index) => (
-            <HabitRow
-              key={item.id}
-              item={item}
-              index={index}
-              onPress={() =>
-                router.push({ pathname: '/habit-form', params: { id: item.id } })
-              }
-              onDelete={() => deleteHabit(item.id)}
-            />
-          ))
+          <>
+            <Text style={styles.sectionTitle}>Your quests</Text>
+            {habits.map((item, index) => (
+              <HabitRow
+                key={item.id}
+                item={item}
+                index={index}
+                onPress={() =>
+                  router.push({ pathname: '/habit-form', params: { id: item.id } })
+                }
+                onDelete={() => deleteHabit(item.id)}
+              />
+            ))}
+          </>
         )}
       </Screen>
       <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.fabWrap}>
@@ -91,7 +104,7 @@ export default function HabitsScreen() {
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           onPress={() => router.push('/habit-form')}
         >
-          <Text style={styles.fabText}>Add</Text>
+          <Text style={styles.fabText}>Custom quest</Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -101,6 +114,12 @@ export default function HabitsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { paddingBottom: 100 },
+  sectionTitle: {
+    ...typography.label,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -121,6 +140,11 @@ const styles = StyleSheet.create({
   name: {
     ...typography.headline,
     color: colors.text,
+    marginBottom: 2,
+  },
+  goal: {
+    ...typography.caption,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   meta: {
@@ -150,7 +174,7 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
   empty: {
-    paddingTop: spacing.xxl * 2,
+    paddingTop: spacing.lg,
     alignItems: 'center',
   },
   emptyTitle: {

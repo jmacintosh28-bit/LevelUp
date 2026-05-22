@@ -2,25 +2,26 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { useGameStore } from '@/src/store/gameStore';
 import { HabitForm } from '@/src/components/HabitForm';
-import type { HabitCategory } from '@/src/types';
-import { colors } from '@/src/constants/theme';
+import { getPresetById } from '@/src/lib/presets';
+import type { HabitInput } from '@/src/types';
+import { colors, spacing } from '@/src/constants/theme';
 
 export default function HabitFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, presetId } = useLocalSearchParams<{
+    id?: string;
+    presetId?: string;
+  }>();
   const habits = useGameStore((s) => s.habits);
   const addHabit = useGameStore((s) => s.addHabit);
   const updateHabit = useGameStore((s) => s.updateHabit);
   const habit = id ? habits.find((h) => h.id === id) : undefined;
+  const preset = presetId ? getPresetById(presetId) : undefined;
 
-  const handleSave = (
-    name: string,
-    category: HabitCategory,
-    emoji: string
-  ) => {
+  const handleSave = (input: HabitInput) => {
     if (habit) {
-      updateHabit(habit.id, { name, category, emoji });
+      updateHabit(habit.id, input);
     } else {
-      addHabit(name, category, emoji);
+      addHabit(input);
     }
     router.back();
   };
@@ -29,6 +30,7 @@ export default function HabitFormScreen() {
     <View style={styles.container}>
       <HabitForm
         initial={habit}
+        preset={preset}
         onSave={handleSave}
         onCancel={() => router.back()}
       />
@@ -40,6 +42,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 20,
+    padding: spacing.lg,
   },
 });

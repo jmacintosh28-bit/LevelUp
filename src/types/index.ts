@@ -7,13 +7,31 @@ export interface Character {
   stats: Record<StatKey, number>;
 }
 
+export interface QuestPreset {
+  id: string;
+  name: string;
+  goal: string;
+  category: HabitCategory;
+  defaultXpReward: number;
+}
+
 export interface Habit {
   id: string;
   name: string;
+  goal: string;
   category: HabitCategory;
-  emoji?: string;
+  xpReward: number;
+  presetId?: string;
   streak: number;
   lastCompletedDate: string | null;
+}
+
+export interface HabitInput {
+  name: string;
+  goal: string;
+  category: HabitCategory;
+  xpReward: number;
+  presetId?: string;
 }
 
 export interface GameState {

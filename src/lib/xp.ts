@@ -1,7 +1,9 @@
 import type { Character, Habit, StatKey } from '@/src/types';
 import { todayString, yesterdayString } from './dates';
 
-export const BASE_XP = 10;
+export const DEFAULT_XP_REWARD = 10;
+export const MIN_XP_REWARD = 5;
+export const MAX_XP_REWARD = 50;
 export const STREAK_XP_PER_DAY = 2;
 export const MAX_STREAK_BONUS = 20;
 export const STAT_CAP = 99;
@@ -10,12 +12,19 @@ export function xpToNextLevel(level: number): number {
   return 100 * level;
 }
 
-export function calculateXpReward(streakAfterComplete: number): number {
+export function calculateXpReward(
+  streakAfterComplete: number,
+  baseXp: number = DEFAULT_XP_REWARD
+): number {
   const streakBonus = Math.min(
     streakAfterComplete * STREAK_XP_PER_DAY,
     MAX_STREAK_BONUS
   );
-  return BASE_XP + streakBonus;
+  return baseXp + streakBonus;
+}
+
+export function clampXpReward(value: number): number {
+  return Math.min(MAX_XP_REWARD, Math.max(MIN_XP_REWARD, Math.round(value)));
 }
 
 export function applyXp(character: Character, xpGained: number): {

@@ -2,11 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { todayString } from '@/src/lib/dates';
+import { normalizeHabits } from '@/src/lib/migrate';
 import { STORAGE_KEY } from '@/src/lib/storage';
 import {
   applyXp,
   boostStat,
   calculateXpReward,
+  clampXpReward,
   createDefaultCharacter,
   isCompletedToday,
   processStreakBreaks,
@@ -16,24 +18,35 @@ import type {
   CompleteHabitResult,
   GameState,
   Habit,
-  HabitCategory,
+  HabitInput,
   StatKey,
 } from '@/src/types';
 
 interface GameStore extends GameState {
   syncDailyState: () => void;
-  addHabit: (name: string, category: HabitCategory, emoji?: string) => void;
-  updateHabit: (
-    id: string,
-    updates: Partial<Pick<Habit, 'name' | 'category' | 'emoji'>>
-  ) => void;
+  addHabit: (input: HabitInput) => void;
+  updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   completeHabit: (id: string) => CompleteHabitResult | null;
   getTodayQuests: () => Habit[];
+  hasPresetAdded: (presetId: string) => boolean;
 }
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function createHabitFromInput(input: HabitInput): Habit {
+  return {
+    id: generateId(),
+    name: input.name.trim(),
+    goal: input.goal.trim(),
+    category: input.category,
+    xpReward: clampXpReward(input.xpReward),
+    presetId: input.presetId,
+    streak: 0,
+    lastCompletedDate: null,
+  };
 }
 
 export const useGameStore = create<GameStore>()(
@@ -54,23 +67,23 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      addHabit: (name, category, emoji) => {
-        const habit: Habit = {
-          id: generateId(),
-          name: name.trim(),
-          category,
-          emoji: emoji || undefined,
-          streak: 0,
-          lastCompletedDate: null,
-        };
+      addHabit: (input) => {
+        const habit = createHabitFromInput(input);
         set((state) => ({ habits: [...state.habits, habit] }));
       },
 
       updateHabit: (id, updates) => {
         set((state) => ({
-          habits: state.habits.map((h) =>
-            h.id === id ? { ...h, ...updates } : h
-          ),
+          habits: state.habits.map((h) => {
+            if (h.id !== id) return h;
+            const next = { ...h, ...updates };
+            if (updates.xpReward !== undefined) {
+              next.xpReward = clampXpReward(updates.xpReward);
+            }
+            if (updates.name !== undefined) next.name = updates.name.trim();
+            if (updates.goal !== undefined) next.goal = updates.goal.trim();
+            return next;
+          }),
         }));
       },
 
@@ -87,7 +100,10 @@ export const useGameStore = create<GameStore>()(
         if (!habit || isCompletedToday(habit, today)) return null;
 
         const updatedHabit = updateStreak(habit, today);
-        const xpGained = calculateXpReward(updatedHabit.streak);
+        const xpGained = calculateXpReward(
+          updatedHabit.streak,
+          habit.xpReward
+        );
         const { character: afterXp, leveledUp } = applyXp(character, xpGained);
         const finalCharacter = boostStat(afterXp, habit.category);
 
@@ -108,6 +124,10 @@ export const useGameStore = create<GameStore>()(
         const today = todayString();
         return get().habits.filter((h) => !isCompletedToday(h, today));
       },
+
+      hasPresetAdded: (presetId) => {
+        return get().habits.some((h) => h.presetId === presetId);
+      },
     }),
     {
       name: STORAGE_KEY,
@@ -117,7 +137,19 @@ export const useGameStore = create<GameStore>()(
         habits: state.habits,
         lastActiveDate: state.lastActiveDate,
       }),
+      migrate: (persisted) => {
+        const state = persisted as Partial<GameState>;
+        return {
+          character: state.character ?? createDefaultCharacter(),
+          habits: normalizeHabits((state.habits as Habit[]) ?? []),
+          lastActiveDate: state.lastActiveDate ?? todayString(),
+        };
+      },
+      version: 2,
       onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.habits = normalizeHabits(state.habits);
+        }
         state?.syncDailyState();
       },
     }

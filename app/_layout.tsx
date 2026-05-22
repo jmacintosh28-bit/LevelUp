@@ -32,7 +32,7 @@ export default function RootLayout() {
           options={{
             presentation: 'modal',
             headerShown: true,
-            title: 'Habit',
+            title: 'Quest',
             headerStyle: { backgroundColor: colors.background },
             headerShadowVisible: false,
             headerTintColor: colors.text,

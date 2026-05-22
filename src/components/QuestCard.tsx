@@ -6,6 +6,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { Habit } from '@/src/types';
 import { STAT_LABELS, STAT_COLORS } from '@/src/types';
+import { calculateXpReward } from '@/src/lib/xp';
 import { FadeInView } from '@/src/components/FadeInView';
 import { colors, spacing, radius, typography, animation } from '@/src/constants/theme';
 
@@ -20,6 +21,7 @@ interface QuestCardProps {
 export function QuestCard({ habit, onComplete, index = 0 }: QuestCardProps) {
   const scale = useSharedValue(1);
   const statColor = STAT_COLORS[habit.category];
+  const totalXp = calculateXpReward(habit.streak + 1, habit.xpReward);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -42,11 +44,20 @@ export function QuestCard({ habit, onComplete, index = 0 }: QuestCardProps) {
         </View>
         <View style={styles.info}>
           <Text style={styles.name}>{habit.name}</Text>
-          <Text style={styles.category}>{STAT_LABELS[habit.category]}</Text>
+          {habit.goal ? (
+            <Text style={styles.goal} numberOfLines={2}>
+              {habit.goal}
+            </Text>
+          ) : null}
+          <Text style={styles.meta}>
+            {STAT_LABELS[habit.category]}
+            {habit.streak > 0 ? ` · ${habit.streak}d streak` : ''}
+          </Text>
         </View>
-        {habit.streak > 0 && (
-          <Text style={styles.streak}>{habit.streak}d</Text>
-        )}
+        <View style={styles.reward}>
+          <Text style={styles.rewardValue}>+{totalXp}</Text>
+          <Text style={styles.rewardUnit}>XP</Text>
+        </View>
       </AnimatedPressable>
     </FadeInView>
   );
@@ -78,19 +89,30 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     opacity: 0,
   },
-  info: { flex: 1 },
+  info: { flex: 1, marginRight: spacing.sm },
   name: {
     ...typography.headline,
     color: colors.text,
     marginBottom: 2,
   },
-  category: {
+  goal: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  meta: {
     ...typography.caption,
     color: colors.textMuted,
   },
-  streak: {
+  reward: {
+    alignItems: 'flex-end',
+  },
+  rewardValue: {
+    ...typography.headline,
+    color: colors.text,
+  },
+  rewardUnit: {
     ...typography.caption,
-    color: colors.textSecondary,
-    marginLeft: spacing.sm,
+    color: colors.textMuted,
   },
 });

@@ -1,51 +1,49 @@
-import React from 'react';
+import { StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { colors } from '@/src/constants/theme';
-
-function TabIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={24} style={{ marginBottom: -2 }} {...props} />;
-}
+import { colors, typography } from '@/src/constants/theme';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.gold,
+        tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        headerStyle: { backgroundColor: colors.background },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+          letterSpacing: 0.2,
+        },
+        headerStyle: {
+          backgroundColor: colors.background,
+          shadowColor: 'transparent',
+          elevation: 0,
+        },
         headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '800' },
+        headerTitleStyle: {
+          ...typography.title,
+          fontSize: 17,
+        },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: 'Character',
-          tabBarIcon: ({ color }) => <TabIcon name="user" color={color} />,
-        }}
+        options={{ title: 'Progress', tabBarLabel: 'Progress' }}
       />
       <Tabs.Screen
         name="quests"
-        options={{
-          title: 'Quests',
-          tabBarIcon: ({ color }) => <TabIcon name="flag" color={color} />,
-        }}
+        options={{ title: 'Today', tabBarLabel: 'Today' }}
       />
       <Tabs.Screen
         name="habits"
-        options={{
-          title: 'Habits',
-          tabBarIcon: ({ color }) => <TabIcon name="list" color={color} />,
-        }}
+        options={{ title: 'Habits', tabBarLabel: 'Habits' }}
       />
     </Tabs>
   );

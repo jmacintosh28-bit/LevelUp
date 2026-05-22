@@ -2,64 +2,52 @@ import { View, Text, StyleSheet } from 'react-native';
 import type { StatKey } from '@/src/types';
 import { STAT_LABELS, STAT_COLORS } from '@/src/types';
 import { STAT_CAP } from '@/src/lib/xp';
-import { colors } from '@/src/constants/theme';
+import { AnimatedBar } from '@/src/components/AnimatedBar';
+import { FadeInView } from '@/src/components/FadeInView';
+import { colors, spacing, typography } from '@/src/constants/theme';
 
 interface StatBarProps {
   stat: StatKey;
   value: number;
-  icon: string;
+  index?: number;
 }
 
-export function StatBar({ stat, value, icon }: StatBarProps) {
+export function StatBar({ stat, value, index = 0 }: StatBarProps) {
   const percent = (value / STAT_CAP) * 100;
   const statColor = STAT_COLORS[stat];
 
   return (
-    <View style={styles.container}>
+    <FadeInView index={index} style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.icon}>{icon}</Text>
+        <View style={[styles.dot, { backgroundColor: statColor }]} />
         <Text style={styles.label}>{STAT_LABELS[stat]}</Text>
         <Text style={styles.value}>{value}</Text>
       </View>
-      <View style={styles.track}>
-        <View
-          style={[
-            styles.fill,
-            { width: `${percent}%`, backgroundColor: statColor },
-          ]}
-        />
-      </View>
-    </View>
+      <AnimatedBar progress={percent} color={statColor} />
+    </FadeInView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 14 },
+  container: { marginBottom: spacing.lg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
-  icon: { fontSize: 18, marginRight: 8 },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.sm,
+  },
   label: {
+    ...typography.headline,
     flex: 1,
     color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
   },
   value: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  track: {
-    height: 10,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    borderRadius: 5,
   },
 });

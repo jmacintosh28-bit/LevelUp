@@ -38,23 +38,13 @@ export const STAT_LABELS: Record<StatKey, string> = {
   spirit: 'Spirit',
 };
 
-export const STAT_COLORS: Record<StatKey, string> = {
-  vitality: '#34d399',
-  strength: '#f87171',
-  mind: '#60a5fa',
-  spirit: '#c084fc',
-};
+import { statColors } from '@/src/constants/theme';
+
+export const STAT_COLORS: Record<StatKey, string> = statColors;
 
 export const CATEGORY_FLAVOR: Record<StatKey, string> = {
   vitality: 'Health, sleep, nutrition',
   strength: 'Exercise and movement',
   mind: 'Reading, learning, focus',
   spirit: 'Mindfulness and gratitude',
-};
-
-export const DEFAULT_EMOJIS: Record<StatKey, string> = {
-  vitality: '💚',
-  strength: '💪',
-  mind: '🧠',
-  spirit: '✨',
 };

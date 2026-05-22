@@ -1,8 +1,64 @@
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useGameStore } from '@/src/store/gameStore';
+import { Screen } from '@/src/components/Screen';
+import { FadeInView } from '@/src/components/FadeInView';
 import { STAT_LABELS, STAT_COLORS } from '@/src/types';
-import { colors } from '@/src/constants/theme';
+import { colors, spacing, radius, typography, animation } from '@/src/constants/theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function HabitRow({
+  item,
+  index,
+  onPress,
+  onDelete,
+}: {
+  item: { id: string; name: string; category: keyof typeof STAT_COLORS; streak: number };
+  index: number;
+  onPress: () => void;
+  onDelete: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+      <AnimatedPressable
+        style={[styles.card, animatedStyle]}
+        onPress={onPress}
+        onPressIn={() => {
+          scale.value = withSpring(0.99, animation.spring);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, animation.spring);
+        }}
+      >
+        <View
+          style={[styles.dot, { backgroundColor: STAT_COLORS[item.category] }]}
+        />
+        <View style={styles.info}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.meta}>
+            {STAT_LABELS[item.category]}
+            {item.streak > 0 ? ` · ${item.streak} day streak` : ''}
+          </Text>
+        </View>
+        <Pressable onPress={onDelete} hitSlop={12} style={styles.deleteBtn}>
+          <Text style={styles.deleteText}>Remove</Text>
+        </Pressable>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
 
 export default function HabitsScreen() {
   const habits = useGameStore((s) => s.habits);
@@ -10,123 +66,101 @@ export default function HabitsScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={habits}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>⚒️</Text>
-            <Text style={styles.emptyTitle}>No habits forged</Text>
-            <Text style={styles.emptyText}>
-              Tap + to create your first daily quest.
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() =>
-              router.push({
-                pathname: '/habit-form',
-                params: { id: item.id },
-              })
-            }
-          >
-            <Text style={styles.emoji}>{item.emoji}</Text>
-            <View style={styles.info}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={[styles.category, { color: STAT_COLORS[item.category] }]}>
-                {STAT_LABELS[item.category]} · 🔥 {item.streak}
-              </Text>
-            </View>
-            <Pressable
-              style={styles.deleteBtn}
-              onPress={(e) => {
-                e.stopPropagation?.();
-                deleteHabit(item.id);
-              }}
-              hitSlop={8}
-            >
-              <Text style={styles.deleteText}>✕</Text>
-            </Pressable>
-          </Pressable>
+      <Screen contentStyle={styles.list}>
+        {habits.length === 0 ? (
+          <FadeInView style={styles.empty}>
+            <Text style={styles.emptyTitle}>No habits yet</Text>
+            <Text style={styles.emptyText}>Add one to build your routine.</Text>
+          </FadeInView>
+        ) : (
+          habits.map((item, index) => (
+            <HabitRow
+              key={item.id}
+              item={item}
+              index={index}
+              onPress={() =>
+                router.push({ pathname: '/habit-form', params: { id: item.id } })
+              }
+              onDelete={() => deleteHabit(item.id)}
+            />
+          ))
         )}
-      />
-      <Pressable
-        style={styles.fab}
-        onPress={() => router.push('/habit-form')}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </Pressable>
+      </Screen>
+      <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.fabWrap}>
+        <Pressable
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+          onPress={() => router.push('/habit-form')}
+        >
+          <Text style={styles.fabText}>Add</Text>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: 20, paddingBottom: 100 },
+  list: { paddingBottom: 100 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  emoji: { fontSize: 32, marginRight: 14 },
-  info: { flex: 1 },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: spacing.md,
+  },
+  info: { flex: 1, marginRight: spacing.sm },
   name: {
+    ...typography.headline,
     color: colors.text,
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  category: { fontSize: 13, fontWeight: '600' },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+  meta: {
+    ...typography.caption,
+    color: colors.textMuted,
   },
-  deleteText: { color: colors.danger, fontSize: 16, fontWeight: '700' },
-  fab: {
+  deleteBtn: { paddingVertical: spacing.xs },
+  deleteText: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  fabWrap: {
     position: 'absolute',
-    right: 24,
-    bottom: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.gold,
+    left: spacing.lg,
+    right: spacing.lg,
+    bottom: spacing.lg,
+  },
+  fab: {
+    backgroundColor: colors.accent,
+    paddingVertical: 16,
+    borderRadius: radius.md,
     alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
   },
+  fabPressed: { opacity: 0.9 },
   fabText: {
-    color: colors.background,
-    fontSize: 32,
-    fontWeight: '300',
-    lineHeight: 34,
+    ...typography.headline,
+    color: colors.surface,
   },
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
+  empty: {
+    paddingTop: spacing.xxl * 2,
+    alignItems: 'center',
+  },
   emptyTitle: {
+    ...typography.title,
     color: colors.text,
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   emptyText: {
+    ...typography.body,
     color: colors.textMuted,
-    fontSize: 15,
     textAlign: 'center',
   },
 });

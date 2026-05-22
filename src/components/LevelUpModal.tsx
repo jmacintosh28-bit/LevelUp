@@ -1,5 +1,6 @@
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors } from '@/src/constants/theme';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import { colors, spacing, radius, typography } from '@/src/constants/theme';
 
 interface LevelUpModalProps {
   visible: boolean;
@@ -16,30 +17,35 @@ export function LevelUpModal({
   xpGained,
   onClose,
 }: LevelUpModalProps) {
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.content}>
-          {leveledUp ? (
-            <>
-              <Text style={styles.emoji}>⭐</Text>
-              <Text style={styles.title}>Level Up!</Text>
-              <Text style={styles.subtitle}>
-                You reached Level {level}! New power awaits.
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.emoji}>✨</Text>
-              <Text style={styles.title}>Quest Complete!</Text>
-              <Text style={styles.subtitle}>+{xpGained} XP earned</Text>
-            </>
-          )}
-          <Pressable style={styles.button} onPress={onClose}>
+    <Modal visible transparent animationType="none" onRequestClose={onClose}>
+      <Animated.View
+        entering={FadeIn.duration(220)}
+        exiting={FadeOut.duration(180)}
+        style={styles.overlay}
+      >
+        <Animated.View
+          entering={ZoomIn.springify().damping(18).stiffness(180)}
+          style={styles.content}
+        >
+          <Text style={styles.title}>
+            {leveledUp ? `Level ${level}` : 'Done'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {leveledUp
+              ? 'You reached a new level.'
+              : `+${xpGained} experience`}
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={onClose}
+          >
             <Text style={styles.buttonText}>Continue</Text>
           </Pressable>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -47,44 +53,39 @@ export function LevelUpModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(26, 26, 24, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: spacing.lg,
   },
   content: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
+    borderRadius: radius.lg,
+    padding: spacing.xl,
     width: '100%',
-    maxWidth: 320,
-    borderWidth: 2,
-    borderColor: colors.gold,
+    maxWidth: 300,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
-  emoji: { fontSize: 56, marginBottom: 16 },
   title: {
-    color: colors.gold,
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 8,
-    textAlign: 'center',
+    ...typography.title,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    color: colors.textMuted,
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 24,
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
   },
   button: {
-    backgroundColor: colors.gold,
-    paddingHorizontal: 32,
+    backgroundColor: colors.accent,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: radius.md,
+    alignItems: 'center',
   },
+  buttonPressed: { opacity: 0.88 },
   buttonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '800',
+    ...typography.headline,
+    color: colors.surface,
   },
 });

@@ -19,7 +19,6 @@ import type {
   HabitCategory,
   StatKey,
 } from '@/src/types';
-import { DEFAULT_EMOJIS } from '@/src/types';
 
 interface GameStore extends GameState {
   syncDailyState: () => void;
@@ -60,7 +59,7 @@ export const useGameStore = create<GameStore>()(
           id: generateId(),
           name: name.trim(),
           category,
-          emoji: emoji ?? DEFAULT_EMOJIS[category],
+          emoji: emoji || undefined,
           streak: 0,
           lastCompletedDate: null,
         };

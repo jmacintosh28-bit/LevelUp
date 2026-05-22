@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useGameStore } from '@/src/store/gameStore';
 import { getXpProgress } from '@/src/lib/xp';
-import { colors } from '@/src/constants/theme';
+import { AnimatedBar } from '@/src/components/AnimatedBar';
+import { colors, spacing, radius, typography } from '@/src/constants/theme';
 
 export function CharacterCard() {
   const character = useGameStore((s) => s.character);
@@ -10,89 +12,56 @@ export function CharacterCard() {
   const totalStreaks = habits.reduce((sum, h) => sum + h.streak, 0);
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.avatar}>🧙</Text>
-      <Text style={styles.title}>Adventurer</Text>
-      <View style={styles.levelBadge}>
-        <Text style={styles.levelText}>Lv. {character.level}</Text>
+    <Animated.View entering={FadeIn.duration(400)} style={styles.card}>
+      <Text style={styles.level}>Level {character.level}</Text>
+      <View style={styles.xpRow}>
+        <Text style={styles.xpLabel}>Experience</Text>
+        <Text style={styles.xpValue}>
+          {current} / {needed}
+        </Text>
       </View>
-      <View style={styles.xpSection}>
-        <View style={styles.xpHeader}>
-          <Text style={styles.xpLabel}>Experience</Text>
-          <Text style={styles.xpValue}>
-            {current} / {needed} XP
-          </Text>
-        </View>
-        <View style={styles.xpTrack}>
-          <View style={[styles.xpFill, { width: `${Math.min(percent, 100)}%` }]} />
-        </View>
-      </View>
-      <Text style={styles.streakSummary}>
-        🔥 {totalStreaks} total streak days across quests
-      </Text>
-    </View>
+      <AnimatedBar progress={percent} color={colors.accent} height={6} />
+      {habits.length > 0 && (
+        <Text style={styles.meta}>
+          {totalStreaks} streak {totalStreaks === 1 ? 'day' : 'days'} total
+        </Text>
+      )}
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    marginBottom: 20,
   },
-  avatar: { fontSize: 64, marginBottom: 8 },
-  title: {
+  level: {
+    ...typography.largeTitle,
     color: colors.text,
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: spacing.lg,
   },
-  levelBadge: {
-    backgroundColor: colors.gold,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 20,
-  },
-  levelText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  xpSection: { width: '100%' },
-  xpHeader: {
+  xpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'baseline',
+    marginBottom: spacing.sm,
   },
   xpLabel: {
-    color: colors.gold,
-    fontSize: 14,
-    fontWeight: '700',
+    ...typography.caption,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
   },
   xpValue: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 13,
   },
-  xpTrack: {
-    height: 12,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  xpFill: {
-    height: '100%',
-    backgroundColor: colors.gold,
-    borderRadius: 6,
-  },
-  streakSummary: {
+  meta: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 13,
-    marginTop: 16,
-    textAlign: 'center',
+    marginTop: spacing.md,
   },
 });

@@ -1,79 +1,96 @@
 import { Pressable, View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import type { Habit } from '@/src/types';
 import { STAT_LABELS, STAT_COLORS } from '@/src/types';
-import { colors } from '@/src/constants/theme';
+import { FadeInView } from '@/src/components/FadeInView';
+import { colors, spacing, radius, typography, animation } from '@/src/constants/theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface QuestCardProps {
   habit: Habit;
   onComplete: () => void;
+  index?: number;
 }
 
-export function QuestCard({ habit, onComplete }: QuestCardProps) {
+export function QuestCard({ habit, onComplete, index = 0 }: QuestCardProps) {
+  const scale = useSharedValue(1);
   const statColor = STAT_COLORS[habit.category];
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      onPress={onComplete}
-    >
-      <View style={styles.left}>
-        <Text style={styles.emoji}>{habit.emoji ?? '⚔️'}</Text>
+    <FadeInView index={index}>
+      <AnimatedPressable
+        style={[styles.card, animatedStyle]}
+        onPress={onComplete}
+        onPressIn={() => {
+          scale.value = withSpring(0.98, animation.spring);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, animation.spring);
+        }}
+      >
+        <View style={[styles.check, { borderColor: statColor }]}>
+          <View style={[styles.checkInner, { backgroundColor: statColor }]} />
+        </View>
         <View style={styles.info}>
           <Text style={styles.name}>{habit.name}</Text>
-          <Text style={[styles.category, { color: statColor }]}>
-            {STAT_LABELS[habit.category]} quest
-          </Text>
+          <Text style={styles.category}>{STAT_LABELS[habit.category]}</Text>
         </View>
-      </View>
-      <View style={styles.right}>
-        <Text style={styles.streak}>🔥 {habit.streak}</Text>
-        <View style={styles.completeBtn}>
-          <Text style={styles.completeText}>Complete</Text>
-        </View>
-      </View>
-    </Pressable>
+        {habit.streak > 0 && (
+          <Text style={styles.streak}>{habit.streak}d</Text>
+        )}
+      </AnimatedPressable>
+    </FadeInView>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  left: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  emoji: { fontSize: 32, marginRight: 14 },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  checkInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    opacity: 0,
+  },
   info: { flex: 1 },
   name: {
+    ...typography.headline,
     color: colors.text,
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  category: { fontSize: 13, fontWeight: '600' },
-  right: { alignItems: 'flex-end' },
+  category: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
   streak: {
-    color: colors.gold,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  completeBtn: {
-    backgroundColor: colors.gold,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  completeText: {
-    color: colors.background,
-    fontSize: 13,
-    fontWeight: '800',
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 });

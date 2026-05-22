@@ -1,46 +1,38 @@
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useGameStore } from '@/src/store/gameStore';
 import { CharacterCard } from '@/src/components/CharacterCard';
 import { StatBar } from '@/src/components/StatBar';
-import { STAT_KEYS, DEFAULT_EMOJIS } from '@/src/types';
-import { colors } from '@/src/constants/theme';
-
-const STAT_ICONS: Record<string, string> = {
-  vitality: '❤️',
-  strength: '⚔️',
-  mind: '📖',
-  spirit: '🕯️',
-};
+import { Screen } from '@/src/components/Screen';
+import { FadeInView } from '@/src/components/FadeInView';
+import { STAT_KEYS } from '@/src/types';
+import { colors, spacing, typography } from '@/src/constants/theme';
 
 export default function CharacterScreen() {
   const character = useGameStore((s) => s.character);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <Screen>
       <CharacterCard />
-      <Text style={styles.sectionTitle}>Attributes</Text>
-      {STAT_KEYS.map((stat) => (
+      <FadeInView index={1}>
+        <Text style={styles.sectionTitle}>Stats</Text>
+      </FadeInView>
+      {STAT_KEYS.map((stat, i) => (
         <StatBar
           key={stat}
           stat={stat}
           value={character.stats[stat]}
-          icon={STAT_ICONS[stat] ?? DEFAULT_EMOJIS[stat]}
+          index={i + 2}
         />
       ))}
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, paddingBottom: 40 },
   sectionTitle: {
-    color: colors.gold,
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 16,
+    ...typography.label,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
   },
 });

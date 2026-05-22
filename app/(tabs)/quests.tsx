@@ -1,12 +1,16 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeIn, Layout } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useGameStore } from '@/src/store/gameStore';
 import { QuestCard } from '@/src/components/QuestCard';
 import { LevelUpModal } from '@/src/components/LevelUpModal';
+import { Screen } from '@/src/components/Screen';
+import { FadeInView } from '@/src/components/FadeInView';
 import { todayString } from '@/src/lib/dates';
 import { isCompletedToday } from '@/src/lib/xp';
-import { colors } from '@/src/constants/theme';
+import { STAT_LABELS, STAT_COLORS } from '@/src/types';
+import { colors, spacing, typography, radius } from '@/src/constants/theme';
 
 type ModalState = {
   visible: boolean;
@@ -33,9 +37,7 @@ export default function QuestsScreen() {
     async (id: string) => {
       const result = completeHabit(id);
       if (!result) return;
-      await Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success
-      );
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setModal({
         visible: true,
         leveledUp: result.leveledUp,
@@ -48,24 +50,26 @@ export default function QuestsScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <Screen contentStyle={styles.screenContent}>
         {habits.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🗺️</Text>
-            <Text style={styles.emptyTitle}>No quests yet</Text>
+          <FadeInView style={styles.empty}>
+            <Text style={styles.emptyTitle}>Nothing for today</Text>
             <Text style={styles.emptyText}>
-              Forge a habit in the Habits tab to begin your adventure.
+              Add a habit to start tracking.
             </Text>
-          </View>
+          </FadeInView>
         ) : (
           <>
             {pending.length > 0 && (
               <>
-                <Text style={styles.sectionTitle}>Today's Quests</Text>
-                {pending.map((habit) => (
+                <FadeInView>
+                  <Text style={styles.sectionTitle}>Today</Text>
+                </FadeInView>
+                {pending.map((habit, i) => (
                   <QuestCard
                     key={habit.id}
                     habit={habit}
+                    index={i + 1}
                     onComplete={() => handleComplete(habit.id)}
                   />
                 ))}
@@ -73,29 +77,42 @@ export default function QuestsScreen() {
             )}
             {done.length > 0 && (
               <>
-                <Text style={[styles.sectionTitle, styles.doneSection]}>
-                  Completed Today
-                </Text>
-                {done.map((habit) => (
-                  <View key={habit.id} style={styles.doneCard}>
-                    <Text style={styles.doneEmoji}>{habit.emoji}</Text>
-                    <Text style={styles.doneName}>{habit.name}</Text>
-                    <Text style={styles.doneCheck}>✓</Text>
-                  </View>
+                <FadeInView index={pending.length + 1}>
+                  <Text style={[styles.sectionTitle, styles.doneSection]}>
+                    Completed
+                  </Text>
+                </FadeInView>
+                {done.map((habit, i) => (
+                  <Animated.View
+                    key={habit.id}
+                    entering={FadeIn.duration(300)}
+                    layout={Layout.springify()}
+                    style={styles.doneCard}
+                  >
+                    <View
+                      style={[
+                        styles.doneDot,
+                        { backgroundColor: STAT_COLORS[habit.category] },
+                      ]}
+                    />
+                    <View style={styles.doneInfo}>
+                      <Text style={styles.doneName}>{habit.name}</Text>
+                      <Text style={styles.doneCategory}>
+                        {STAT_LABELS[habit.category]}
+                      </Text>
+                    </View>
+                  </Animated.View>
                 ))}
               </>
             )}
             {pending.length === 0 && done.length > 0 && (
-              <View style={styles.allDone}>
-                <Text style={styles.allDoneEmoji}>🏆</Text>
-                <Text style={styles.allDoneText}>
-                  All quests complete! Rest well, adventurer.
-                </Text>
-              </View>
+              <FadeInView index={done.length + 2} style={styles.allDone}>
+                <Text style={styles.allDoneText}>All done for today.</Text>
+              </FadeInView>
             )}
           </>
         )}
-      </ScrollView>
+      </Screen>
 
       <LevelUpModal
         visible={modal.visible}
@@ -110,48 +127,61 @@ export default function QuestsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, paddingBottom: 40 },
+  screenContent: { paddingTop: spacing.sm },
   sectionTitle: {
-    color: colors.gold,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 12,
+    ...typography.label,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
   },
-  doneSection: { marginTop: 20, color: colors.textMuted },
+  doneSection: { marginTop: spacing.lg },
   doneCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    opacity: 0.7,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
   },
-  doneEmoji: { fontSize: 24, marginRight: 12 },
-  doneName: { flex: 1, color: colors.textMuted, fontSize: 15 },
-  doneCheck: { color: colors.success, fontSize: 20, fontWeight: '800' },
-  allDone: { alignItems: 'center', marginTop: 24, padding: 20 },
-  allDoneEmoji: { fontSize: 48, marginBottom: 12 },
+  doneDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.md,
+  },
+  doneInfo: { flex: 1 },
+  doneName: {
+    ...typography.body,
+    color: colors.textMuted,
+    textDecorationLine: 'line-through',
+  },
+  doneCategory: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  allDone: {
+    marginTop: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
   allDoneText: {
-    color: colors.gold,
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.body,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
+  empty: {
+    paddingTop: spacing.xxl * 2,
+    alignItems: 'center',
+  },
   emptyTitle: {
+    ...typography.title,
     color: colors.text,
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   emptyText: {
+    ...typography.body,
     color: colors.textMuted,
-    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 22,
   },
 });
